@@ -89,6 +89,26 @@ func get(stub shim.ChaincodeStubInterface, args []string) (string, error) {
 	return string(value), nil
 }
 
+func (t *SimpleAsset) Query(stub shim.ChaincodeStubInterface) peer.Response {
+	// Extract the function and args from the transaction proposal
+	args := stub.GetStringArgs()
+
+	if len(args) != 1 {
+		return shim.Error("Incorrect arguments. Expecting a key")
+	}
+
+	value, err := stub.GetState(args[0])
+	if err != nil {
+		return shim.Error("Failed to get asset")
+	}
+	if value == nil {
+		return shim.Error("Asset not found")
+	}
+
+	// Return the result as success payload
+	return shim.Success([]byte(string(value)))
+}
+
 // main function starts up the chaincode in the container during instantiate
 func main() {
 	if err := shim.Start(new(SimpleAsset)); err != nil {

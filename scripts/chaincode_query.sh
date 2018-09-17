@@ -12,3 +12,6 @@ export MSYS_NO_PATHCONV=1
 
 #Invoke Test
 docker exec -e "CORE_PEER_LOCALMSPID=Org1MSP" cli peer chaincode invoke -o orderer.example.com:7050 -C mychannel -n sacc -c '{"Args":["get","key730"]}'
+
+#Query Test
+docker exec -e "CORE_PEER_LOCALMSPID=Org1MSP" cli peer chaincode query -o orderer.example.com:7050 -C mychannel -n sacc -c '{"Args":["nil","key730"]}'
