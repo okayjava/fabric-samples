@@ -37,8 +37,8 @@ services:
     container_name: kafka0
     networks:
     - basic
-    links:
-    - zk1:zk1
+    depends_on:
+    - zk1
 
   ca.example.com:
     image: hyperledger/fabric-ca
@@ -76,6 +76,8 @@ services:
         - ./crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/:/etc/hyperledger/msp/peerOrg1
     networks:
       - basic
+    depends_on:
+      - kafka0
 
   peer0.org1.example.com:
     container_name: peer0.org1.example.com
