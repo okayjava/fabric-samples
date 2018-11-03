@@ -9,13 +9,44 @@ networks:
   basic:
 
 services:
+  zk1:
+    image: hyperledger/fabric-zookeeper
+    environment:
+    - ZOO_MY_ID=1
+    - ZOO_SERVERS=server.1=zk1:2888:3888
+    - ZOO_TICK_TIME=2000
+    - ZOO_INIT_LIMIT=10
+    - ZOO_SYNC_LIMIT=5
+    container_name: zk1
+    networks:
+    - basic
+
+  kafka0:
+    image: hyperledger/fabric-kafka
+    environment:
+    - KAFKA_BROKER_ID=0
+    - KAFKA_MIN_INSYNC_REPLICAS=1
+    - KAFKA_MESSAGE_MAX_BYTES=50000000
+    - KAFKA_REPLICA_FETCH_MAX_BYTES=50000000
+    - KAFKA_PRODUCER_MAX_REQUEST_SIZE=50000000
+    - KAFKA_CONSUMER_MAX_PARTITION_FETCH_BYTES=50000000
+    - CONNECT_PRODUCER_MAX_REQUEST_SIZE=50000000
+    - CONNECT_CONSUMER_MAX_PARTITION_FETCH_BYTES=50000000
+    - KAFKA_DEFAULT_REPLICATION_FACTOR=1
+    - KAFKA_ZOOKEEPER_CONNECT=zk1:2181
+    container_name: kafka0
+    networks:
+    - basic
+    links:
+    - zk1:zk1
+
   ca.example.com:
     image: hyperledger/fabric-ca
     environment:
       - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
       - FABRIC_CA_SERVER_CA_NAME=ca.example.com
       - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org1.example.com-cert.pem
-      - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server-config/4239aa0dcd76daeeb8ba0cda701851d14504d31aad1b2ddddbac6a57365e497c_sk
+      - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server-config/5c018e4dec5cbf1f4c0706fea53ba23293e0792e9f41d035a0546377aca32597_sk
     ports:
       - "7054:7054"
     command: sh -c 'fabric-ca-server start -b admin:adminpw'
