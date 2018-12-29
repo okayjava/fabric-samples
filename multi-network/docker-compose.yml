@@ -1,0 +1,259 @@
+#
+# Copyright IBM Corp All Rights Reserved
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+version: '2'
+
+networks:
+  basic:
+
+services:
+  zk1:
+    image: hyperledger/fabric-zookeeper
+    environment:
+    - ZOO_MY_ID=1
+    - ZOO_SERVERS=server.1=zk1:2888:3888
+    - ZOO_TICK_TIME=2000
+    - ZOO_INIT_LIMIT=10
+    - ZOO_SYNC_LIMIT=5
+    container_name: zk1
+    ports:
+    - 2888:2888
+    - 3888:3888
+    - 2181:2181
+    networks:
+    - basic
+
+  kafka0:
+    image: hyperledger/fabric-kafka
+    environment:
+    - KAFKA_BROKER_ID=0
+    - KAFKA_MIN_INSYNC_REPLICAS=1
+    - KAFKA_MESSAGE_MAX_BYTES=6000000
+    - KAFKA_REPLICA_FETCH_MAX_BYTES=6000000
+    - KAFKA_PRODUCER_MAX_REQUEST_SIZE=6000000
+    - KAFKA_CONSUMER_MAX_PARTITION_FETCH_BYTES=6000000
+    - CONNECT_PRODUCER_MAX_REQUEST_SIZE=6000000
+    - CONNECT_CONSUMER_MAX_PARTITION_FETCH_BYTES=6000000
+    - KAFKA_DEFAULT_REPLICATION_FACTOR=1
+    - KAFKA_ZOOKEEPER_CONNECT=zk1:2181
+    container_name: kafka0
+    ports:
+    - 9092:9092
+    networks:
+    - basic
+    depends_on:
+    - zk1
+
+  ca.fastcampus.co.kr:
+    image: hyperledger/fabric-ca
+    environment:
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca.fastcampus.co.kr
+      - FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca.org1.fastcampus.co.kr-cert.pem
+      - FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server-config/a3d71f7837d93e7e6b915d818df585a18282dffd7db76546e3be6fdb85d9d2b6_sk
+    ports:
+      - "7054:7054"
+    command: sh -c 'fabric-ca-server start -b admin:adminpw'
+    volumes:
+      - ./crypto-config/peerOrganizations/org1.fastcampus.co.kr/ca/:/etc/hyperledger/fabric-ca-server-config
+    container_name: ca.fastcampus.co.kr
+    networks:
+      - basic
+
+  orderer.fastcampus.co.kr:
+    container_name: orderer.fastcampus.co.kr
+    image: hyperledger/fabric-orderer
+    environment:
+      - ORDERER_GENERAL_LOGLEVEL=info
+      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_GENESISMETHOD=file
+      - ORDERER_GENERAL_GENESISFILE=/etc/hyperledger/configtx/genesis.block
+      - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
+      - ORDERER_GENERAL_LOCALMSPDIR=/etc/hyperledger/msp/orderer/msp
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer
+    command: orderer
+    ports:
+      - 7050:7050
+    volumes:
+        - ./config/:/etc/hyperledger/configtx
+        - ./crypto-config/ordererOrganizations/fastcampus.co.kr/orderers/orderer.fastcampus.co.kr/:/etc/hyperledger/msp/orderer
+        - ./crypto-config/peerOrganizations/org1.fastcampus.co.kr/peers/peer0.org1.fastcampus.co.kr/:/etc/hyperledger/msp/peerOrg1
+    networks:
+      - basic
+    depends_on:
+      - kafka0
+
+  peer0.org1.fastcampus.co.kr:
+    container_name: peer0.org1.fastcampus.co.kr
+    image: hyperledger/fabric-peer
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_PEER_ID=peer0.org1.fastcampus.co.kr
+      - CORE_LOGGING_PEER=info
+      - CORE_CHAINCODE_LOGGING_LEVEL=info
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/peer/
+      - CORE_PEER_ADDRESS=peer0.org1.fastcampus.co.kr:7051
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=${COMPOSE_PROJECT_NAME}_basic
+      - CORE_LEDGER_STATE_STATEDATABASE=
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: peer node start
+    # command: peer node start --peer-chaincodedev=true
+    ports:
+      - 7051:7051
+      - 7053:7053
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./crypto-config/peerOrganizations/org1.fastcampus.co.kr/peers/peer0.org1.fastcampus.co.kr/msp:/etc/hyperledger/msp/peer
+        - ./crypto-config/peerOrganizations/org1.fastcampus.co.kr/users:/etc/hyperledger/msp/users
+        - ./config:/etc/hyperledger/configtx
+    depends_on:
+      - orderer.fastcampus.co.kr
+    networks:
+      - basic
+
+  peer1.org1.fastcampus.co.kr:
+    container_name: peer1.org1.fastcampus.co.kr
+    image: hyperledger/fabric-peer
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_PEER_ID=peer1.org1.fastcampus.co.kr
+      - CORE_LOGGING_PEER=info
+      - CORE_CHAINCODE_LOGGING_LEVEL=info
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/peer/
+      - CORE_PEER_ADDRESS=peer1.org1.fastcampus.co.kr:7051
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=${COMPOSE_PROJECT_NAME}_basic
+      - CORE_LEDGER_STATE_STATEDATABASE=
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: peer node start
+    # command: peer node start --peer-chaincodedev=true
+    ports:
+      - 7151:7051
+      - 7153:7053
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./crypto-config/peerOrganizations/org1.fastcampus.co.kr/peers/peer1.org1.fastcampus.co.kr/msp:/etc/hyperledger/msp/peer
+        - ./crypto-config/peerOrganizations/org1.fastcampus.co.kr/users:/etc/hyperledger/msp/users
+        - ./config:/etc/hyperledger/configtx
+    depends_on:
+      - orderer.fastcampus.co.kr
+    networks:
+      - basic
+
+  peer0.org2.fastcampus.co.kr:
+    container_name: peer0.org2.fastcampus.co.kr
+    image: hyperledger/fabric-peer
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_PEER_ID=peer0.org2.fastcampus.co.kr
+      - CORE_LOGGING_PEER=info
+      - CORE_CHAINCODE_LOGGING_LEVEL=info
+      - CORE_PEER_LOCALMSPID=Org2MSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/peer/
+      - CORE_PEER_ADDRESS=peer0.org2.fastcampus.co.kr:7051
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=${COMPOSE_PROJECT_NAME}_basic
+      - CORE_LEDGER_STATE_STATEDATABASE=
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: peer node start
+    # command: peer node start --peer-chaincodedev=true
+    ports:
+      - 8051:7051
+      - 8053:7053
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./crypto-config/peerOrganizations/org2.fastcampus.co.kr/peers/peer0.org2.fastcampus.co.kr/msp:/etc/hyperledger/msp/peer
+        - ./crypto-config/peerOrganizations/org2.fastcampus.co.kr/users:/etc/hyperledger/msp/users
+        - ./config:/etc/hyperledger/configtx
+    depends_on:
+      - orderer.fastcampus.co.kr
+    networks:
+      - basic
+
+  peer1.org2.fastcampus.co.kr:
+    container_name: peer1.org2.fastcampus.co.kr
+    image: hyperledger/fabric-peer
+    environment:
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_PEER_ID=peer1.org2.fastcampus.co.kr
+      - CORE_LOGGING_PEER=info
+      - CORE_CHAINCODE_LOGGING_LEVEL=info
+      - CORE_PEER_LOCALMSPID=Org2MSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/peer/
+      - CORE_PEER_ADDRESS=peer1.org2.fastcampus.co.kr:7051
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=${COMPOSE_PROJECT_NAME}_basic
+      - CORE_LEDGER_STATE_STATEDATABASE=
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb:5984
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=
+      - CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: peer node start
+    # command: peer node start --peer-chaincodedev=true
+    ports:
+      - 8151:7051
+      - 8153:7053
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./crypto-config/peerOrganizations/org2.fastcampus.co.kr/peers/peer1.org2.fastcampus.co.kr/msp:/etc/hyperledger/msp/peer
+        - ./crypto-config/peerOrganizations/org2.fastcampus.co.kr/users:/etc/hyperledger/msp/users
+        - ./config:/etc/hyperledger/configtx
+    depends_on:
+      - orderer.fastcampus.co.kr
+    networks:
+      - basic
+
+
+  cli1:
+    container_name: cli1
+    image: hyperledger/fabric-tools
+    tty: true
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_LOGGING_LEVEL=info
+      - CORE_PEER_ID=cli1
+      - CORE_PEER_ADDRESS=peer0.org1.fastcampus.co.kr:7051
+      - CORE_PEER_LOCALMSPID=Org1MSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/users/Admin@org1.fastcampus.co.kr/msp
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: /bin/bash
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./config:/etc/hyperledger/configtx
+        - ../chaincode/:/opt/gopath/src/github.com/
+        - ./crypto-config/peerOrganizations/org1.fastcampus.co.kr/users:/etc/hyperledger/msp/users
+    networks:
+        - basic
+
+  cli2:
+    container_name: cli2
+    image: hyperledger/fabric-tools
+    tty: true
+    environment:
+      - GOPATH=/opt/gopath
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_LOGGING_LEVEL=info
+      - CORE_PEER_ID=cli2
+      - CORE_PEER_ADDRESS=peer0.org2.fastcampus.co.kr:7051
+      - CORE_PEER_LOCALMSPID=Org2MSP
+      - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/msp/users/Admin@org2.fastcampus.co.kr/msp
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: /bin/bash
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./config:/etc/hyperledger/configtx
+        - ../chaincode/:/opt/gopath/src/github.com/
+        - ./crypto-config/peerOrganizations/org2.fastcampus.co.kr/users:/etc/hyperledger/msp/users
+    networks:
+        - basic
