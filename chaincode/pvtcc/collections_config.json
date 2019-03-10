@@ -1,0 +1,9 @@
+[
+ {
+     "name": "org1Private",
+     "policy": "OR('Org1MSP.member')",
+     "requiredPeerCount": 1,
+     "maxPeerCount": 2,
+     "blockToLive": 1000000
+ }
+]
