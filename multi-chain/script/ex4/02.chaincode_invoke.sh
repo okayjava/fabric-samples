@@ -11,4 +11,4 @@ set -ev
 export MSYS_NO_PATHCONV=1
 
 #Invoke Test
-docker exec -e "CORE_PEER_ADDRESS=peer0.org1.fastcampus.co.kr:7051" cli1 peer chaincode invoke -o orderer.fastcampus.co.kr:7050 -C mychannel -n ex4 -c '{"Args":["invoke","ex2","c","50"]}'
+docker exec -e "CORE_PEER_ADDRESS=peer0.org1.fastcampus.co.kr:7051" cli1 peer chaincode invoke -o orderer.fastcampus.co.kr:7050 -C mychannel -n ex4 -c '{"Args":["invoke","ex2","Try","1","mychannel"]}'

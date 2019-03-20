@@ -11,7 +11,7 @@ set -ev
 export MSYS_NO_PATHCONV=1
 
 #Invoke Test
-docker exec -e "CORE_PEER_ADDRESS=peer1.org2.fastcampus.co.kr:7051" cli2 peer chaincode invoke -o orderer.fastcampus.co.kr:7050 -C mychannel -n ex2 -c '{"Args":["query","a"]}'
-docker exec -e "CORE_PEER_ADDRESS=peer0.org2.fastcampus.co.kr:7051" cli2 peer chaincode invoke -o orderer.fastcampus.co.kr:7050 -C mychannel -n ex2 -c '{"Args":["query","b"]}'
-docker exec -e "CORE_PEER_ADDRESS=peer1.org1.fastcampus.co.kr:7051" cli1 peer chaincode invoke -o orderer.fastcampus.co.kr:7050 -C mychannel -n ex2 -c '{"Args":["query","a"]}'
-docker exec -e "CORE_PEER_ADDRESS=peer0.org1.fastcampus.co.kr:7051" cli1 peer chaincode invoke -o orderer.fastcampus.co.kr:7050 -C mychannel -n ex2 -c '{"Args":["query","b"]}'
+docker exec -e "CORE_PEER_ADDRESS=peer1.org2.fastcampus.co.kr:7051" cli2 peer chaincode invoke -o orderer.fastcampus.co.kr:7050 -C mychannel -n ex2 -c '{"Args":["query","Try","ex2","a","mychannel"]}'
+docker exec -e "CORE_PEER_ADDRESS=peer0.org2.fastcampus.co.kr:7051" cli2 peer chaincode invoke -o orderer.fastcampus.co.kr:7050 -C mychannel -n ex2 -c '{"Args":["query","Try","ex2","a","mychannel"]}'
+docker exec -e "CORE_PEER_ADDRESS=peer1.org1.fastcampus.co.kr:7051" cli1 peer chaincode invoke -o orderer.fastcampus.co.kr:7050 -C mychannel -n ex2 -c '{"Args":["query","Try","ex2","a","mychannel"]}'
+docker exec -e "CORE_PEER_ADDRESS=peer0.org1.fastcampus.co.kr:7051" cli1 peer chaincode invoke -o orderer.fastcampus.co.kr:7050 -C mychannel -n ex2 -c '{"Args":["query","Try","ex2","a","mychannel"]}'
